@@ -112,6 +112,10 @@ app.get('/pick-info', function (req, res) {
                         {user: user}
                     ).exec(function (err, x) {
                         if (err) throw "error";
+			if (!x) {
+				res.sendStatus(403);
+				return;
+			}
                         mongoose.model('Server').findOne(
                             {_id: x.server}
                         ).exec(function(err, server){

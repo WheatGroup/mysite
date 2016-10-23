@@ -26,7 +26,7 @@ var createUser = function (name, pwd, mobile, callback) {
     });
 };
 
-createUser("gggin", "123456", "17001105570", function(x){if(x)console.log('good');else console.log('fail!');});
+createUser("wangrui", "1234567", "17001105570", function(x){if(x)console.log('good');else console.log('fail!');});
 /*
  mongoose.model('User').create([{
  name : "gggin2",
