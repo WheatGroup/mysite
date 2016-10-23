@@ -9,7 +9,7 @@ var config = require('./config.js');
 
 var bodyParser = require('body-parser');
 // parse application/x-www-form-urlencoded
-var urlencodedParser = bodyParser.urlencoded({extended: false});
+var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 // parse application/json
 //var jsonParser = bodyParser.json();
@@ -19,12 +19,13 @@ var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
 var Token = require('./token');
+
 function goodTokens(token, callback) {
-    Token.find({token: token}).exec(function (err, data) {
+    Token.find({ token: token }).exec(function(err, data) {
         if (err) console.error(err);
         var good = false;
-        data.forEach(function (token) {
-            if (token.created < Date.now() - 1000 * 60 * 60 * 25 * 7 * 2) {//2 weeks
+        data.forEach(function(token) {
+            if (token.created < Date.now() - 1000 * 60 * 60 * 25 * 7 * 2) { //2 weeks
                 token.remove();
             } else {
                 if (good === false) {
@@ -54,7 +55,7 @@ var fs = require('fs');
 
 function authorize(req, res, next) {
     if (req.cookies && req.cookies.mytoken) {
-        goodTokens(req.cookies.mytoken, function (err, token) {
+        goodTokens(req.cookies.mytoken, function(err, token) {
             if (err) {
                 res.sendStatus(403);
             } else {
@@ -67,18 +68,18 @@ function authorize(req, res, next) {
 app.use('/pick-info', authorize);
 app.use('/logout', authorize);
 
-app.get('/logout', function (req, res) {
+app.get('/logout', function(req, res) {
     res.cookie('mytoken', null);
     res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify({result: true}));
+    res.send(JSON.stringify({ result: true }));
 });
 
 app.use("/login", urlencodedParser);
 
-app.post('/login', function (req, res) {
+app.post('/login', function(req, res) {
     var user = req.body['username'];
     var pwd = req.body['password'];
-    mongoose.model('User').findOne({name: user}, function (err, doc) {
+    mongoose.model('User').findOne({ name: user }, function(err, doc) {
         if (err || doc === null) {
             res.sendStatus(403);
             return;
@@ -87,9 +88,9 @@ app.post('/login', function (req, res) {
         if (authenticated) {
             var token = require('uuid').v1();
             res.cookie('mytoken', token);
-            Token.create({token: token, userName: user});
+            Token.create({ token: token, userName: user });
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({result: true}));
+            res.send(JSON.stringify({ result: true }));
         } else {
             res.sendStatus(403);
         }
@@ -97,32 +98,30 @@ app.post('/login', function (req, res) {
 });
 
 
-app.get('/pick-info', function (req, res) {
+app.get('/pick-info', function(req, res) {
     res.setHeader('Content-Type', 'application/json');
     try {
         console.log(req.cookies.mytoken);
-        goodTokens(req.cookies.mytoken, function (err, token) {
+        goodTokens(req.cookies.mytoken, function(err, token) {
             console.log(token);
             if (err) {
                 throw "error";
             } else {
-                mongoose.model('User').findOne({name: token.userName}, function (err, user) {
+                mongoose.model('User').findOne({ name: token.userName }, function(err, user) {
                     if (err) throw "error";
-                    mongoose.model('ShadowSockService').findOne(
-                        {user: user}
-                    ).exec(function (err, x) {
+                    mongoose.model('ShadowSockService').findOne({ user: user }).exec(function(err, x) {
                         if (err) throw "error";
-			if (!x) {
-				res.sendStatus(403);
-				return;
-			}
-                        mongoose.model('Server').findOne(
-                            {_id: x.server}
-                        ).exec(function(err, server){
+                        if (!x) {
+                            res.sendStatus(403);
+                            return;
+                        }
+                        mongoose.model('Server').findOne({ _id: x.server }).exec(function(err, server) {
                             if (err) throw "error";
-                            x.currentTime = Number(new Date());
                             x.server = server;
-                            res.send({result:cry.encryptAES(JSON.stringify(x), KEY)});
+                            var tmp =
+                                JSON.parse(JSON.stringify(x));
+                            tmp.currentTime = Number(new Date());
+                            res.send({ result: cry.encryptAES(JSON.stringify(tmp), KEY) });
                         });
                     });
                 });
@@ -140,7 +139,7 @@ app.get('/pick-info', function (req, res) {
 var mongooseadmin = require('mongooseadmin');
 
 var options = {
-    authentication: function (username, password, callback) {
+    authentication: function(username, password, callback) {
         callback(username == 'gggin' && password == '777999');
     },
 };
