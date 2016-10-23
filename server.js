@@ -47,6 +47,8 @@ mongoose.connect(config.DB_PATH);
 mongoose.model('User', objects.User);
 mongoose.model('Server', objects.Server);
 mongoose.model('ShadowSockService', objects.ShadowSockService);
+mongoose.model('TrainInformation', objects.TrainInformation);
+mongoose.model('TrainTicket', objects.TrainTicket);
 
 var KEY = "c5760$%^1d6191202487a94d4()_2d1a";
 
@@ -65,8 +67,15 @@ function authorize(req, res, next) {
     }
 }
 
+var baucis = require('baucis');
 app.use('/pick-info', authorize);
 app.use('/logout', authorize);
+app.use('/api', authorize);
+
+baucis.rest('TrainInformation');
+baucis.rest('TrainTicket');
+
+app.use('/api', baucis())
 
 app.get('/logout', function(req, res) {
     res.cookie('mytoken', null);
@@ -117,11 +126,31 @@ app.get('/pick-info', function(req, res) {
                         }
                         mongoose.model('Server').findOne({ _id: x.server }).exec(function(err, server) {
                             if (err) throw "error";
-                            x.server = server;
-                            var tmp =
-                                JSON.parse(JSON.stringify(x));
-                            tmp.currentTime = Number(new Date());
-                            res.send({ result: cry.encryptAES(JSON.stringify(tmp), KEY) });
+                            if (!server) {
+                                res.sendStatus(403);
+                                return;
+                            }
+                            mongoose.model('TrainInformation').findOne({ user: user }).exec(function(err, trainInfo) {
+                                if (err) throw "error";
+                                if (!trainInfo) {
+                                    res.sendStatus(403);
+                                    return;
+                                }
+                                mongoose.model('TrainTicket').find({ user: user }).exec(function(err, trainTickets) {
+                                    if (err) throw "error";
+                                    if (!trainTickets) {
+                                        res.sendStatus(403);
+                                        return;
+                                    }
+                                    x.server = server;
+                                    var tmp =
+                                        JSON.parse(JSON.stringify(x));
+                                    tmp.currentTime = Number(new Date());
+                                    tmp.trainInfo = trainInfo;
+                                    tmp.trainTickets = trainTickets;
+                                    res.send({ result: cry.encryptAES(JSON.stringify(tmp), KEY) });
+                                });
+                            });
                         });
                     });
                 });

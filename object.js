@@ -42,8 +42,39 @@ var ShadowSockService = new mongoose.Schema(
     }
 );
 
+var TrainInformation = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+        },
+        a12306Account: {
+            type: String
+        },
+        a12306Password: {
+            type: String
+        },
+        names: [String],
+        IDs: [String]
+    }
+);
+
+var TrainTicket = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+        },
+        names:[String],
+        IDs:[String],
+        TrainNumber:String,
+        TrainDate:String,
+    }
+);
+
+
 module.exports = {
     User: User,
     Server: Server,
-    ShadowSockService: ShadowSockService
+    ShadowSockService: ShadowSockService,
+    TrainInformation: TrainInformation,
+    TrainTicket: TrainTicket
 }
