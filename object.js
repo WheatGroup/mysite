@@ -42,7 +42,7 @@ var ShadowSockService = new mongoose.Schema(
     }
 );
 
-var TrainInformation = new mongoose.Schema(
+var TrainTicket = new mongoose.Schema(
     {
         user: {
             type: mongoose.Schema.Types.ObjectId, ref: 'User'
@@ -53,20 +53,10 @@ var TrainInformation = new mongoose.Schema(
         a12306Password: {
             type: String
         },
-        names: [String],
-        IDs: [String]
-    }
-);
-
-var TrainTicket = new mongoose.Schema(
-    {
-        user: {
-            type: mongoose.Schema.Types.ObjectId, ref: 'User'
-        },
-        names:[String],
-        IDs:[String],
-        TrainNumber:String,
-        TrainDate:String,
+        trainNumber:String,
+        trainDate:String,
+        comment:String,
+        state:String, // pending fetching done cancel
     }
 );
 
@@ -75,6 +65,5 @@ module.exports = {
     User: User,
     Server: Server,
     ShadowSockService: ShadowSockService,
-    TrainInformation: TrainInformation,
     TrainTicket: TrainTicket
 }
