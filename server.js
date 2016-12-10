@@ -6,6 +6,7 @@ var express = require('express');
 var app = express();
 var cryptor = require('./cryptor.js');
 var config = require('./config.js');
+var add_user = require('./tools/add_user.js');
 
 var bodyParser = require('body-parser');
 // parse application/x-www-form-urlencoded
@@ -48,11 +49,13 @@ mongoose.model('User', objects.User);
 mongoose.model('Server', objects.Server);
 mongoose.model('ShadowSockService', objects.ShadowSockService);
 mongoose.model('TrainTicket', objects.TrainTicket);
+mongoose.model('Userinfo', objects.Userinfo);
 
 var KEY = "c5760$%^1d6191202487a94d4()_2d1a";
 
 var cry = require('./cryptor.js');
 var fs = require('fs');
+
 
 function authorize(req, res, next) {
     if (req.cookies && req.cookies.mytoken) {
@@ -113,6 +116,53 @@ app.post('/login', function(req, res) {
     });
 });
 
+
+app.use("/register", urlencodedParser);
+
+app.post('/register', function(req, res) {
+    var user = req.body['username'];
+    var pwd = req.body['password'];
+    var phoneNum = req.body['phoneNum'];
+    add_user.isExist(user, function(error, value) {
+        if(value){
+            //查找到了
+            res.sendStatus(400);
+            console.log('用户已经注册过了');
+        }
+        else {
+            add_user.createUser(user, pwd, phoneNum, function(error, x){
+                //x就是接到的User对象
+                console.log(x);
+
+                mongoose.model('Server').findOne({ ip: config.IP },
+                    function(err, server){
+                        mongoose.model('ShadowSockService').create([{
+                            user: x[0], //返回的是个列表
+                            server: server,
+                            startTime:Date.now()-365*24*3600*1000,
+                            duringDay:30
+                            }],  function(error, value){
+                                console.log(error, value);
+                                if(value){
+                                    console.log('default SS init successfully!!');
+                                    if(x){
+                                        console.log('User create good');
+                                        res.sendStatus(200);
+                                    }
+                                    else {
+                                        console.log('User create fail!');
+                                        res.sendStatus(400);
+                                    }
+                                }
+                            });
+                });
+
+            });
+        }
+    });
+});
+
+
 app.use('/set-qiangpiao', urlencodedParser);
 
 app.post('/set-qiangpiao', function(req, res) {
@@ -155,20 +205,24 @@ app.get('/pick-info', function(req, res) {
                 throw "error";
             } else {
                 mongoose.model('User').findOne({ name: token.userName }, function(err, user) {
+                    console.log(1,user);
                     if (err) throw "error";
                     mongoose.model('ShadowSockService').findOne({ user: user }).exec(function(err, x) {
+                        console.log(2,x);
                         if (err) throw "error";
                         if (!x) {
                             res.sendStatus(403);
                             return;
                         }
                         mongoose.model('Server').findOne({ _id: x.server }).exec(function(err, server) {
+                            console.log(3,server);
                             if (err) throw "error";
                             if (!server) {
                                 res.sendStatus(403);
                                 return;
                             }
                             mongoose.model('TrainTicket').find({ user: user }).exec(function(err, trainTickets) {
+                                console.log(4,trainTickets);
                                 if (err) throw "error";
                                 if (!trainTickets) {
                                     res.sendStatus(403);
@@ -179,6 +233,7 @@ app.get('/pick-info', function(req, res) {
                                     JSON.parse(JSON.stringify(x));
                                 tmp.currentTime = Number(new Date());
                                 tmp.trainTickets = trainTickets;
+                                console.log(tmp);
                                 res.send({ result: cry.encryptAES(JSON.stringify(tmp), KEY) });
                             });
                         });

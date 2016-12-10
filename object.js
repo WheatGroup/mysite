@@ -11,7 +11,25 @@ var User = new mongoose.Schema(
         password: String,
         salt: String,
         mobile: String,
-        registerTime: {type: Number, default: Date.now},
+        clear_salt: String,
+        registerTime: {type: Number, default: Date.now}
+    }
+);
+
+var Userinfo = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId, ref: 'User'
+        },
+        level:{
+            type: Number, default:0
+        },
+        balance:{
+            type: Number, default:0
+        },
+        commondNum:{
+            type: Number, default:0
+        }
     }
 );
 
@@ -42,6 +60,8 @@ var ShadowSockService = new mongoose.Schema(
     }
 );
 
+
+
 var TrainTicket = new mongoose.Schema(
     {
         user: {
@@ -65,5 +85,6 @@ module.exports = {
     User: User,
     Server: Server,
     ShadowSockService: ShadowSockService,
-    TrainTicket: TrainTicket
+    TrainTicket: TrainTicket,
+    Userinfo:Userinfo
 }

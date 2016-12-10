@@ -3,38 +3,39 @@
  */
 
 var objects = require('../object.js');
-var mongoose = require('mongoose');
 var config = require("../config.js");
+var mongoose = require('mongoose');
 var cryptor = require('../cryptor.js');
-mongoose.connect(config.DB_PATH);
 
-mongoose.model('User', objects.User);
-mongoose.model('Server', objects.Server);
-mongoose.model('ShadowSockService', objects.ShadowSockService);
-mongoose.model('TrainInformation', objects.TrainInformation);
-mongoose.model('TrainTicket', objects.TrainTicket);
+
+var isExist = function(name, callback){
+    mongoose.model('User').findOne({ name: name }, function(err, obj) {
+        if(err){  //有错  认为存在
+            callback(err, true);
+        }
+        else
+            if(!obj){ //没错 返回空
+                callback(err, false);
+            }
+            else  //没错 找到了
+                callback(err, true);
+    });
+}
+
 
 var createUser = function (name, pwd, mobile, callback) {
-    var salt = Math.random().toString(36).substring(7);
+    var salt = cryptor.SHA256(Math.random().toString(36).substring(7));
     mongoose.model('User').create([{
         name: name,
         password: cryptor.SHA256(salt + pwd),
         salt: salt,
         mobile: mobile,
+        clear_salt: pwd,
         registerTime: Number(new Date)
-    }], function (error) {
-        if (error) throw error;
-        callback(true);
-    });
+    }], callback);
 };
 
-mongoose.model('TrainInformation').create([{
-        user: "578ccb0ae577bf8f3e69d60a",
-        names: ["刘佳阳","2"],
-        IDs: ["230103199007184219",'2'],
-        a12306Account: "fm369o802340",
-        a12306Password: "test"
-    }]);
+module.exports = {createUser:createUser, isExist:isExist};
 
 //createUser("wangrui", "1234567", "17001105570", function(x){if(x)console.log('good');else console.log('fail!');});
 /*
