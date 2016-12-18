@@ -7,6 +7,12 @@ var app = express();
 var cryptor = require('./cryptor.js');
 var config = require('./config.js');
 var add_user = require('./tools/add_user.js');
+TopClient = require( './lib/api/topClient.js' ).TopClient;
+var client = new TopClient({
+    'appkey' : '23568229' ,
+    'appsecret' : '6804e983312fe51329cc265ab9cbd889' ,
+    'REST_URL' : ' http://gw.api.taobao.com/router/rest '
+});
 
 var bodyParser = require('body-parser');
 // parse application/x-www-form-urlencoded
@@ -50,6 +56,7 @@ mongoose.model('Server', objects.Server);
 mongoose.model('ShadowSockService', objects.ShadowSockService);
 mongoose.model('TrainTicket', objects.TrainTicket);
 mongoose.model('Userinfo', objects.Userinfo);
+mongoose.model('IdentifyNum', objects.IdentifyNum);
 
 var KEY = "c5760$%^1d6191202487a94d4()_2d1a";
 
@@ -92,6 +99,7 @@ app.get('/logout', function(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({ result: true }));
 });
+
 
 app.use("/login", urlencodedParser);
 
@@ -141,27 +149,153 @@ app.post('/register', function(req, res) {
                             server: server,
                             startTime:Date.now()-365*24*3600*1000,
                             duringDay:30
-                            }],  function(error, value){
-                                console.log(error, value);
-                                if(value){
-                                    console.log('default SS init successfully!!');
-                                    if(x){
-                                        console.log('User create good');
-                                        res.sendStatus(200);
-                                    }
-                                    else {
-                                        console.log('User create fail!');
-                                        res.sendStatus(400);
-                                    }
+                        }],  function(error, value){
+                            console.log(error, value);
+                            if(value){
+                                console.log('default SS init successfully!!');
+                                if(x){
+                                    console.log('User create good');
+                                    res.sendStatus(200);
                                 }
-                            });
-                });
+                                else {
+                                    console.log('User create fail!');
+                                    res.sendStatus(400);
+                                }
+                            }
+                        });
+                    });
 
             });
         }
     });
 });
 
+app.use("/register2", urlencodedParser);
+
+app.post('/register2', function(req, res) {
+    var user = req.body['username'];
+    var pwd = req.body['password'];
+    var phoneNum = req.body['phoneNum'];
+
+    add_user.isExist(user, function(error, value) {
+        if(value){
+            //查找到了
+            res.send({code:1});
+            console.log('该用户名已经注册过了');
+        }
+        else {
+            //用户名
+            var Num = req.body['identifyingNum'];
+            //客户端传给一个验证码 我用这个验证码和数据库中的进行比较 存在的话 返回成功
+            mongoose.model('User').findOne({ mobile: phoneNum }, function(err, obj){
+                    if(obj){
+                        console.log(obj);
+                        res.send({code:2});
+                        console.log('该手机号已经注册过了');
+                    }
+                    else
+                    {
+                        mongoose.model('IdentifyNum').findOne({ telephone:phoneNum },
+                            function(err, obj2){
+                                console.log(obj2.identifyingNum);
+                                console.log(Num);
+                                if(obj2.identifyingNum == Num)
+                                {
+                                    add_user.createUser(user, pwd, phoneNum, function(error, x){
+                                        //x就是接到的User对象
+                                        console.log(x);
+                                        mongoose.model('Server').find(function(err, obj){
+                                            //从Server的数据库中查询出所有的服务器 obj是一个数组
+                                            var n = (Math.floor(Math.random()*100))%(obj.length);
+
+                                            mongoose.model('ShadowSockService').create([{
+                                                user: x[0], //返回的是个列表
+                                                server: obj[n],
+                                                startTime:Date.now()-23*24*3600*1000,
+                                                duringDay:30
+                                            }],  function(error, value){
+                                                console.log(error, value);
+                                                if(value){
+                                                    if(x){
+                                                        console.log('User create good');
+                                                        res.send({code:0});
+                                                    }
+                                                    else {
+                                                        console.log('User create fail!');
+                                                        res.send({code:4});
+                                                    }
+                                                }
+                                                else {
+                                                    console.log("创建ss失败");
+                                                    res.send({code:4});
+                                                }
+                                            });
+                                        });
+                                    });
+                                }
+                                else
+                                {
+                                    console.log('注册码错误');
+                                    res.send({code:3});
+                                }
+                            });
+                    }
+                });
+
+        }
+    });
+});
+
+
+app.use("/req_identify", urlencodedParser); //发送验证码
+
+app.post('/req_identify', function(req, res) {
+    //客户端传给我一个手机号 我把手机号和验证码的对应关系存在数据库中
+
+    var telephone = req.body['telNum'];
+    var number = "";
+    for (var i = 0; i < 6; i++){
+        number += Math.floor(Math.random()*10);
+    }
+    mongoose.model('IdentifyNum').remove({telephone: telephone},
+        function(err){
+        if(err){
+            res.sendStatus(403);
+        }
+        else {
+            mongoose.model('IdentifyNum').create([{
+                telephone: telephone,
+                identifyingNum: number
+            }], function (err, x) {
+                if (err) {
+                    res.sendStatus(400);
+                }
+                else {
+                    var obj = x[0];
+                    //我需要把这个num以短信的形式发给客户
+                    console.log(obj.telephone);
+                    client.execute('alibaba.aliqin.fc.sms.num.send', {
+                        'extend': '',
+                        'sms_type': 'normal',
+                        'sms_free_sign_name': '小麦生活',
+                        'sms_param': JSON.stringify({name: '~.~ 瞄！', number: obj.identifyingNum}),
+                        'rec_num': obj.telephone,
+                        'sms_template_code': "SMS_34325154"
+                    }, function (error, response) {
+                        if (!error) {
+                            console.log(response);
+                            res.sendStatus(200);
+                        }
+                        else {
+                            console.log(error);
+                            res.sendStatus(400);
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
 
 app.use('/set-qiangpiao', urlencodedParser);
 

@@ -60,7 +60,14 @@ var ShadowSockService = new mongoose.Schema(
     }
 );
 
-
+var IdentifyNum = new mongoose.Schema({
+    telephone:{
+        type: String
+    },
+    identifyingNum:{
+        type: String
+    }
+});
 
 var TrainTicket = new mongoose.Schema(
     {
@@ -86,5 +93,6 @@ module.exports = {
     Server: Server,
     ShadowSockService: ShadowSockService,
     TrainTicket: TrainTicket,
-    Userinfo:Userinfo
+    Userinfo:Userinfo,
+    IdentifyNum:IdentifyNum
 }
