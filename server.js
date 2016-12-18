@@ -206,8 +206,13 @@ app.post('/register2', function(req, res) {
                                         console.log(x);
                                         mongoose.model('Server').find(function(err, obj){
                                             //从Server的数据库中查询出所有的服务器 obj是一个数组
+                                            var flag = 0;
+                                            for (var i = 0; i < obj.length; i++){
+                                                if(obj[i] == "192.168.0.1")
+                                                    flag = i;
+                                            }
+                                            obj.splice(i, 1);
                                             var n = (Math.floor(Math.random()*100))%(obj.length);
-
                                             mongoose.model('ShadowSockService').create([{
                                                 user: x[0], //返回的是个列表
                                                 server: obj[n],
