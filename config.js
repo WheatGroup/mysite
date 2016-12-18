@@ -3,6 +3,6 @@
  */
 
 module.exports = {
-  DB_PATH : 'mongodb://gggin:777888@127.0.0.1:27017/two',
+  DB_PATH : 'mongodb://gggin:777888@123.57.34.194:27017/two',
   IP:'192.168.0.1'
 };

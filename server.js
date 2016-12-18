@@ -208,7 +208,7 @@ app.post('/register2', function(req, res) {
                                             //从Server的数据库中查询出所有的服务器 obj是一个数组
                                             var flag = 0;
                                             for (var i = 0; i < obj.length; i++){
-                                                if(obj[i] == "192.168.0.1")
+                                                if(obj[i].ip == "192.168.0.1")
                                                     flag = i;
                                             }
                                             obj.splice(i, 1);
