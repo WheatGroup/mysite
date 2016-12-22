@@ -11,7 +11,7 @@ TopClient = require( './lib/api/topClient.js' ).TopClient;
 var client = new TopClient({
     'appkey' : '23568229' ,
     'appsecret' : '6804e983312fe51329cc265ab9cbd889' ,
-    'REST_URL' : ' http://gw.api.taobao.com/router/rest '
+    'REST_URL' : 'http://gw.api.taobao.com/router/rest'
 });
 
 var bodyParser = require('body-parser');

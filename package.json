@@ -23,6 +23,7 @@
     "express": "^4.13.3",
     "mongoose": "^4.3.5",
     "mongooseadmin": "^1.0.5",
+    "urllib": "^2.19.0",
     "uuid": "^2.0.1"
   }
 }
