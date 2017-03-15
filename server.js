@@ -211,7 +211,7 @@ app.post('/register2', function(req, res) {
                                                 if(obj[i].ip == "192.168.0.1")
                                                     flag = i;
                                             }
-                                            obj.splice(i, 1);
+                                            obj.splice(flag, 1);
                                             var n = (Math.floor(Math.random()*100))%(obj.length);
                                             mongoose.model('ShadowSockService').create([{
                                                 user: x[0], //返回的是个列表
